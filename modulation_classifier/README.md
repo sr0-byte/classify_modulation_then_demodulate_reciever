@@ -4,6 +4,7 @@ Automatic modulation classification (BPSK, BFSK, QPSK, 16QAM, DPSK) with a
 random-forest classifier on high-order cumulant and spectral features, followed
 by a demodulator that recovers the transmitted message and reports the BER.
 
+Split from the single-file `amc_terminalplot.py` into modules.
 
 ## Structure
 
@@ -19,6 +20,8 @@ modulation_classifier/
 ├── plotting.py            # Plot style, backend selection, demo and evaluation plots
 ├── train.py               # Train the model and save it to models/
 ├── test.py                # Unit tests
+├── test_all_schemes.py    # All 5 schemes on one message (demo: low SNR, shows errors | --strict: pass/fail)
+├── data/                  # Exported dataset (.npy files, see Dataset files)
 ├── models/                # Trained model (amc_model.joblib)
 ├── figures/               # Saved plots (.png)
 ├── results/               # CSV outputs (accuracy_vs_snr.csv, ber_vs_snr.csv)
@@ -39,9 +42,15 @@ pip install -r requirements.txt
 
 ```bash
 python train.py            # trains and writes models/amc_model.joblib
+python dataset.py          # exports the dataset as .npy files to data/
 python train.py --eval     # same, plus saves evaluation figures (no GUI)
 python main.py             # interactive demo
 python test.py             # unit tests
+python test_all_schemes.py # all schemes on one message; options: --snr X, --strict, --sym-snr X, --seed N
+ #example with message option
+python dataset.py                     # writes the files to data/
+python dataset.py --n-per 500 --n-test 125    # larger set: 40,000 train / 10,000 test
+python train.py --save-data           # saves the exact data used for training, then trains
 ```
 
 `train.py` options: `--snr-min`, `--snr-max`, `--snr-step`, `--n-per`, `--n-test`, `--trees`, `--out`.
@@ -66,26 +75,42 @@ python test.py             # unit tests
 Plots open in a window when a GUI backend is available and are always saved in `figures/`.
 Set `AMC_NO_GUI=1` to force save-only mode.
 
+### Dataset files (`data/`)
+Created by `python dataset.py` (or `python train.py --save-data`). Shapes are for the default
+settings (SNR -10 to 20 dB, 150 train / 40 test frames per class per SNR).
+
+| File | Shape (default settings) | Contents |
+|---|---|---|
+| `X_train.npy`, `y_train.npy` | 12000x10, 12000 | training set |
+| `X_test.npy`, `y_test.npy` | 3200x10, 3200 | test set |
+| `X.npy`, `y.npy` | 15200x10, 15200 | train and test combined |
+| `snr_*.npy` | one per set | SNR (dB) of each frame |
+| `labels.txt` | | class and feature-column names |
+
+Class labels in `y`: 0 = BPSK, 1 = BFSK, 2 = QPSK, 3 = 16QAM, 4 = DPSK.
+Columns of `X`: `|C20|`, `|C40|`, `|C41|`, `C42`, `amp_std`, `amp_kurt`, `P_fsk`, `P_dc`, `FSK_ratio`, `med|f_inst|`.
+
+`X_train`/`X_test` use different random seeds, so no test frame appears in training. `X.npy`/`y.npy`
+contain both sets, so do not split them randomly and call the result an independent test.
+
 ## Notes
 - The feature settings in `config.py` and `features.py` must stay the same between training
   and testing, otherwise a saved model will not match.
 - BER theory curves are drawn for BPSK, QPSK, 16QAM and BFSK (no closed form is used for DPSK).
 
-```text
+## Ival AND Qval
+### Test BPSK:
+I_val:``` 1 -1 1 -1```
+Q_val: ```0 0 0 0```
 
-Test BPSK:
-I_val: 1 -1 1 -1
-Q_val: 0 0 0 0
+### Test QPSK:
+I_val: ```1 1 -1 -1```
+Q_val: ```1 -1 -1 1```
 
-Test QPSK:
-I_val: 1 1 -1 -1
-Q_val: 1 -1 -1 1
+### Test 16-QAM (Outer 4 corners):
+I_val: ```3 3 -3 -3```
+Q_val: ```3 -3 -3 3```
 
-Test 16-QAM (Outer 4 corners):
-I_val: 3 3 -3 -3
-Q_val: 3 -3 -3 3
-
-DPSK 
-I_val: 1.0  0.7071  0.0  -0.7071  -1.0
-Q_val: 0.0  0.7071  1.0   0.7071   0.0
-```
+### Test DPSK 
+I_val: ```1.0  0.7071  0.0  -0.7071  -1.0```
+Q_val: ```0.0  0.7071  1.0   0.7071   0.0```

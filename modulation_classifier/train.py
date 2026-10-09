@@ -9,7 +9,7 @@ import os
 import time
 import numpy as np
 
-from config import MODS, MODEL_PATH
+from config import MODS, MODEL_PATH, DATA_DIR
 
 
 def main():
@@ -22,6 +22,8 @@ def main():
     ap.add_argument("--trees", type=int, default=300)
     ap.add_argument("--eval", action="store_true", help="also save evaluation figures (no GUI)")
     ap.add_argument("--out", default=MODEL_PATH)
+    ap.add_argument("--save-data", action="store_true", help="also save the train/test data as .npy files")
+    ap.add_argument("--data-dir", default=DATA_DIR)
     args = ap.parse_args()
 
     if args.eval:
@@ -33,9 +35,13 @@ def main():
     snrs = list(range(args.snr_min, args.snr_max + 1, args.snr_step))
     print(f"Building training set: {len(snrs)} SNRs x {len(MODS)} classes x {args.n_per} frames...")
     t0 = time.time()
-    Xtr, ytr, _ = make_dataset(snrs, args.n_per, seed=1)
-    Xte, yte, _ = make_dataset(snrs, args.n_test, seed=2)
+    Xtr, ytr, str_ = make_dataset(snrs, args.n_per, seed=1)
+    Xte, yte, ste = make_dataset(snrs, args.n_test, seed=2)
     print(f"  done in {time.time() - t0:.1f}s  (train {len(ytr)}, test {len(yte)})")
+
+    if args.save_data:
+        from dataset import save_dataset
+        save_dataset(args.data_dir, Xtr, ytr, str_, Xte, yte, ste)
 
     print("Training random forest...")
     model = build_model(n_estimators=args.trees)
@@ -47,7 +53,7 @@ def main():
     print(f"Model saved: {args.out}")
 
     if args.eval:
-        import modulation_classifier.plotting as plotting
+        import plotting
         plotting.plot_classifier_eval(model, n_per=args.n_test)
 
 

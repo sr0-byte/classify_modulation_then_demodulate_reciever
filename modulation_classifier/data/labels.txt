@@ -1,0 +1,18 @@
+class index -> modulation
+0 = BPSK
+1 = BFSK
+2 = QPSK
+3 = 16QAM
+4 = DPSK
+
+feature columns of X
+0 = |C20|
+1 = |C40|
+2 = |C41|
+3 = C42
+4 = amp_std
+5 = amp_kurt
+6 = P_fsk
+7 = P_dc
+8 = FSK_ratio
+9 = med|f_inst|

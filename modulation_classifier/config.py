@@ -3,12 +3,13 @@ import os
 import numpy as np
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+DATA_DIR = os.path.join(BASE_DIR, "data")
 MODELS_DIR = os.path.join(BASE_DIR, "models")
 FIGURES_DIR = os.path.join(BASE_DIR, "figures")
 RESULTS_DIR = os.path.join(BASE_DIR, "results")
 MODEL_PATH = os.path.join(MODELS_DIR, "amc_model.joblib")
 
-for _d in (MODELS_DIR, FIGURES_DIR, RESULTS_DIR):
+for _d in (DATA_DIR, MODELS_DIR, FIGURES_DIR, RESULTS_DIR):
     os.makedirs(_d, exist_ok=True)
 
 SPS = 8                                   # samples per symbol
